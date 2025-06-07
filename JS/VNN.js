@@ -178,8 +178,9 @@ class NeuralNetwork {
         return expValues.map(value => value / sumExpValues);
     }
 
-    dumpWB() {
-        const filePath = path.join(__dirname, 'WeightsBiases.json');
+    dumpWB(savePath) {
+        const filePath = savePath || path.join(__dirname, 'WeightsBiases.json');
+        console.log("[debug]: savePath: ", filePath);
         fs.writeFile(filePath, JSON.stringify({
             WeightsHidden: this.Wh,
             BiasesHidden: this.Bh,
@@ -197,8 +198,9 @@ class NeuralNetwork {
         // });
     }
 
-    async loadWB() {
-        const filePath = path.join(__dirname, 'WeightsBiases.json');
+    async loadWB(savePath) {
+        const filePath = savePath || path.join(__dirname, 'WeightsBiases.json');
+        console.log("[debug]: savePath: ", filePath);
 
         try {
             // Use fs.promises.readFile to read the file asynchronously
