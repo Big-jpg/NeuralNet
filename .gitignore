@@ -1,1 +1,3 @@
-/iris/MNISTload.md
+*/*.md
+*/*.zip
+*/node_modules
