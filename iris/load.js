@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 
 const filePath = path.resolve('./iris.data');
-// console.log(filePath)
 const fileData = fs.readFileSync(filePath, 'utf8');
 const rows = fileData.split('\n');
 const data = rows.map(r => {
@@ -37,15 +36,16 @@ function swap(arr1, arr2, i, rand) {
     [arr2[i], arr2[rand]] = [arr2[rand], arr2[i]];
 }
 
-// console.log(DATA.inputs[149]); // 0 to 149
-
 for (let i = 0; i < DATA.inputs.length; i++) {
     const rand = parseInt(Math.random() * DATA.inputs.length) % DATA.inputs.length;
     swap(DATA.inputs, DATA.labels, i, rand);
 }
 
-// for (let i = 0; i < 15; i++) {
-//     console.log(DATA.inputs[i], DATA.labels[i]);
-// }
+const splitIndex = parseInt(DATA.inputs.length * 0.75);
+const [TRAINING_INPUTS, TESTING_INPUTS] = [DATA.inputs.slice(0, splitIndex), DATA.inputs.slice(splitIndex,)];
+const [TRAINING_LABELS, TESTING_LABELS] = [DATA.labels.slice(0, splitIndex), DATA.labels.slice(splitIndex,)];
 
-module.exports = DATA;
+const TRAINING_DATA = { inputs: TRAINING_INPUTS, labels: TRAINING_LABELS };
+const TESTING_DATA = { inputs: TESTING_INPUTS, labels: TESTING_LABELS };
+
+module.exports = { TRAINING_DATA, TESTING_DATA };
