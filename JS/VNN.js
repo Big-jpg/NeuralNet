@@ -123,7 +123,7 @@ class NeuralNetwork {
             nextLayer.delta[i] = nextLayer.output[i] - labelArr[i];
             nextLayer.error[i] = nextLayer.delta[i];
 
-            this.totalError += nextLayer.error[i] * nextLayer.error[i];
+            this.totalError -= labelArr[i] * Math.log(nextLayer.output[i] + 1e-9);
         }
 
         for (let i = this.numLayers - 2; i >= 0; i--) {
@@ -166,8 +166,8 @@ class NeuralNetwork {
             console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
 
             // if (epoch % 100 == 0) {
-                // console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
-                // this.learningRate *= 0.95; // decay LR per 1000 Epochs
+            // console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
+            // this.learningRate *= 0.95; // decay LR per 1000 Epochs
             // }
 
             this.totalError = 0.0;
@@ -273,7 +273,7 @@ class NeuralNetwork {
 
     dumpWB(savePath) {
         const filePath = savePath || path.join(__dirname, 'model.json');
-        console.log("[debug]: savePath: ", filePath);
+        // console.log("[debug]: savePath: ", filePath);
         fs.writeFile(filePath, JSON.stringify({
             layers: this.layers
         }), (err) => {
@@ -284,7 +284,7 @@ class NeuralNetwork {
 
     async loadWB(savePath) {
         const filePath = savePath || path.join(__dirname, 'model.json');
-        console.log("[debug]: savePath: ", filePath);
+        // console.log("[debug]: savePath: ", filePath);
 
         try {
             const data = await fs.promises.readFile(filePath, 'utf8');
@@ -302,6 +302,26 @@ class NeuralNetwork {
         } catch (err) {
             console.error("Error loading the file:", err);
         }
+    }
+
+    evaluate(TESING_DATA) {
+        let correct = 0;
+        let totalTestSize = Math.min(TESING_DATA.inputs.length, TESING_DATA.labels.length);
+
+        for (let i = 0; i < totalTestSize; i++) {
+            const inputArr = TESING_DATA.inputs[i];
+            const labelArr = TESING_DATA.labels[i];
+            const prediction = this.predict(inputArr);
+            // console.log(`| INPUT: ${inputArr} | OUTPUT: ${prediction.map(x => x.toFixed('3'))} | LABEL: ${labelArr} | ERROR: ${error} |`);
+            // console.log(`| OUTPUT: ${prediction.map(x => x.toFixed('3'))} |\n| LABEL: ${labelArr} |\n| ERROR: ${error} |`);
+
+            if (prediction.indexOf(Math.max(...prediction)) === labelArr.indexOf(Math.max(...labelArr)))
+                correct++;
+        }
+        console.log("------- Result -------");
+        console.log("Correct:  ", correct);
+        console.log("Total:    ", totalTestSize);
+        console.log("Accuracy: ", (correct / totalTestSize * 100).toFixed('2'), '%');
     }
 }
 
