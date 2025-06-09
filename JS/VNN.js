@@ -19,7 +19,8 @@ class Layer {
 
     generateRandomMatrix(row, col) {
         return Array.from({ length: row }, () =>
-            Array.from({ length: col }, () => Math.random()));
+            Array.from({ length: col }, () => Math.random() * Math.sqrt(2 / this.numInputs)
+            ));
     }
 
     activate(x) {
@@ -32,6 +33,13 @@ class Layer {
         if (this.activation === 'relu') return x > 0 ? 1 : 0;
     }
 
+    softmax(x) {
+        const maxX = Math.max(...x);
+        const expValues = x.map(value => Math.exp(value - maxX));
+        const sumExpValues = expValues.reduce((a, b) => a + b, 0);
+        return expValues.map(value => value / sumExpValues);
+    }
+
     forward(input) {
         this.input = [...input];
         for (let i = 0; i < this.numNeurons; i++) {
@@ -39,7 +47,14 @@ class Layer {
             for (let j = 0; j < this.numInputs; j++) {
                 this.z[i] += this.weights[i][j] * this.input[j];
             }
-            this.output[i] = this.activate(this.z[i]);
+            // this.output[i] = this.activate(this.z[i]);
+        }
+        if (this.activation == 'softmax') {
+            this.output = this.softmax(this.z);
+        } else {
+            for (let i = 0; i < this.numNeurons; i++) {
+                this.output[i] = this.activate(this.z[i]);
+            }
         }
         return this.output;
     }
@@ -50,6 +65,7 @@ class Layer {
             for (let j = 0; j < nextLayer.numNeurons; j++) {
                 this.error[i] += nextLayer.delta[j] * nextLayer.weights[j][i];
             }
+
             if (this.activation == 'relu')
                 this.delta[i] = this.error[i] * this.activationDerivative(this.z[i]);
             else
@@ -75,7 +91,8 @@ class NeuralNetwork {
         for (i; i < layerSizes.length - 1; i++) {
             this.layers.push(new Layer(layerSizes[i], layerSizes[i - 1], 'relu'));
         }
-        this.layers.push(new Layer(layerSizes[i], layerSizes[i - 1]));
+        this.layers.push(new Layer(layerSizes[i], layerSizes[i - 1], 'softmax'));
+        // this.layers.push(new Layer(layerSizes[i], layerSizes[i - 1], 'sigmoid'));
 
         this.learningRate = learningRate;
         this.epochs = epochs;
@@ -98,8 +115,14 @@ class NeuralNetwork {
         let nextLayer = this.layers[this.numLayers - 1];
         // console.log(nextLayer);
         for (let i = 0; i < nextLayer.numNeurons; i++) {
-            nextLayer.error[i] = nextLayer.output[i] - labelArr[i];
-            nextLayer.delta[i] = nextLayer.error[i] * nextLayer.activationDerivative(nextLayer.output[i]);
+            // // MSE + sigmoid
+            // nextLayer.error[i] = nextLayer.output[i] - labelArr[i];
+            // nextLayer.delta[i] = nextLayer.error[i] * nextLayer.activationDerivative(nextLayer.output[i]);
+
+            // softmax + cross-entropy derivative
+            nextLayer.delta[i] = nextLayer.output[i] - labelArr[i];
+            nextLayer.error[i] = nextLayer.delta[i];
+
             this.totalError += nextLayer.error[i] * nextLayer.error[i];
         }
 
@@ -134,19 +157,19 @@ class NeuralNetwork {
     trainSGD(TRAINING_DATA) {
         const NUM_SAMPLES = Math.min(TRAINING_DATA.inputs.length, TRAINING_DATA.labels.length);
         for (let epoch = 0; epoch < this.epochs; epoch++) {
-            // this.shuffleData(TRAINING_DATA, NUM_SAMPLES);
+            this.shuffleData(TRAINING_DATA, NUM_SAMPLES);
             for (let s = 0; s < NUM_SAMPLES; s++) {
                 this.forwardPass(TRAINING_DATA.inputs[s]);
                 this.backwardPass(TRAINING_DATA.labels[s]);
                 this.updateWB();
             }
-            // console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
-            // this.totalError = 0.0;
+            console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
 
-            if (epoch % 1000 == 0) {
-                console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
-                this.learningRate *= 0.98; // decay LR per 1000 Epochs
-            }
+            // if (epoch % 100 == 0) {
+                // console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
+                // this.learningRate *= 0.95; // decay LR per 1000 Epochs
+            // }
+
             this.totalError = 0.0;
         }
     }
@@ -246,13 +269,6 @@ class NeuralNetwork {
 
     predict(inputArr) {
         return this.forwardPass(inputArr);
-    }
-
-    softmax(x) {
-        const maxX = Math.max(...x);
-        const expValues = x.map(value => Math.exp(value - maxX));
-        const sumExpValues = expValues.reduce((acc, curr) => acc + curr, 0);
-        return expValues.map(value => value / sumExpValues);
     }
 
     dumpWB(savePath) {
