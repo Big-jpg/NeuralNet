@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Draw-a-Num</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+        }
+
+        #drawCanvas {
+            border: 2px solid #333;
+            background-color: white;
+            cursor: crosshair;
+        }
+
+        #controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 8px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #results {
+            font-size: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #results div {
+            margin: 10px 0;
+        }
+
+        .container {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+        }
+
+        h3 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div>
+            <h3>Draw below (100x100, scaled from 280x280)</h3>
+            <canvas id="drawCanvas" width="100" height="100"></canvas>
+            <div id="controls">
+                <button onclick="clearCanvas()">Clear</button>
+                <button onclick="processImage()">Process Image</button>
+            </div>
+        </div>
+
+        <div id="results">
+            <div><strong>Prediction:</strong> <span id="pred">-</span></div>
+            <div><strong>Confidence:</strong> <span id="conf">--.--%</span></div>
+        </div>
+    </div>
+
+    <script src="./webModel.js"></script>
+    <script>
+        const nn = new NeuralNetwork([784, 18, 16, 10], 0.01, 10);
+        getWeightsAndBiases(nn);
+
+        async function getWeightsAndBiases(nn) {
+            try {
+                const response = await fetch('./WebModel04.json');
+                const obj = await response.json();
+                nn.layers = [];
+                obj.layers.forEach(layer => {
+                    const newLayer = new Layer(layer.numNeurons, layer.numInputs, layer.activation);
+                    newLayer.weights = layer.weights;
+                    newLayer.biases = layer.biases;
+                    nn.layers.push(newLayer);
+                });
+            } catch (error) {
+                console.log(error)
+            }
+        }
+
+        const drawCanvas = document.getElementById('drawCanvas');
+        const ctx = drawCanvas.getContext('2d');
+        let drawing = false;
+
+        function getPos(e) {
+            const rect = drawCanvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            } else {
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault(); // Prevent scrolling on touch devices
+            const { x, y } = getPos(e);
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(x, y, 6, 0, Math.PI * 2); // Stroke radius
+            ctx.fill();
+        }
+
+        // Mouse events
+        drawCanvas.addEventListener('mousedown', (e) => { drawing = true; draw(e); });
+        drawCanvas.addEventListener('mouseup', () => drawing = false);
+        drawCanvas.addEventListener('mouseout', () => drawing = false);
+        drawCanvas.addEventListener('mousemove', draw);
+
+        // Touch events
+        drawCanvas.addEventListener('touchstart', (e) => { drawing = true; draw(e); });
+        drawCanvas.addEventListener('touchend', () => drawing = false);
+        drawCanvas.addEventListener('touchcancel', () => drawing = false);
+        drawCanvas.addEventListener('touchmove', draw);
+
+        function clearCanvas() {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+        }
+
+        // Initialize canvas with white background
+        clearCanvas();
+
+        function processImage() {
+            const smallCanvas = document.createElement('canvas');
+            smallCanvas.width = 28;
+            smallCanvas.height = 28;
+            const smallCtx = smallCanvas.getContext('2d');
+
+            // Downscale
+            smallCtx.drawImage(drawCanvas, 0, 0, 28, 28);
+
+            const imageData = smallCtx.getImageData(0, 0, 28, 28);
+            const data = imageData.data;
+            const brightnessArray = [];
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const brightness = Math.abs(255 - Math.round(0.299 * r + 0.587 * g + 0.114 * b)) / 255.0;
+                brightnessArray.push(brightness);
+            }
+
+            const prediction = nn.predict(brightnessArray);
+            const predictedDigit = prediction.indexOf(Math.max(...prediction));
+            const confidence = (Math.max(...prediction) * 100).toFixed(2);
+
+            document.getElementById('pred').textContent = predictedDigit;
+            document.getElementById('conf').textContent = confidence + "%";
+
+            if (confidence >= 80.0) {
+                document.getElementById('conf').style.color = 'hsl(120deg, 53%, 49%)';
+            } else if (confidence >= 50) {
+                document.getElementById('conf').style.color = 'hsl(60deg, 53%, 49%)';
+            } else {
+                document.getElementById('conf').style.color = 'hsl(0deg, 53%, 49%)';
+            }
+
+            // console.log('Brightness Array (28x28):', brightnessArray);
+            // console.log(`Prediction: ${predictedDigit}, Confidence: ${confidence}`);
+        }
+    </script>
+</body>
+
+</html>
