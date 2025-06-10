@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const nn = new NeuralNetwork(
-    [TRAINING_DATA.inputs[0].length, 3, 3, TRAINING_DATA.labels[0].length],
+    [TRAINING_DATA.inputs[0].length, 6, 4, TRAINING_DATA.labels[0].length],
     0.03,
     10000);
 
