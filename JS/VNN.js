@@ -163,12 +163,12 @@ class NeuralNetwork {
                 this.backwardPass(TRAINING_DATA.labels[s]);
                 this.updateWB();
             }
-            console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
-
-            // if (epoch % 100 == 0) {
             // console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
-            // this.learningRate *= 0.95; // decay LR per 1000 Epochs
-            // }
+
+            if (epoch % 100 == 0) {
+                console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
+                // this.learningRate *= 0.95; // decay LR per 1000 Epochs
+            }
 
             this.totalError = 0.0;
         }
@@ -274,8 +274,17 @@ class NeuralNetwork {
     dumpWB(savePath) {
         const filePath = savePath || path.join(__dirname, 'model.json');
         // console.log("[debug]: savePath: ", filePath);
+        const layers = [...this.layers];
+        layers.forEach(layer => {
+            delete layer.input;
+            delete layer.z;
+            delete layer.output;
+            delete layer.error;
+            delete layer.delta;
+        });
+        // console.log(layers);
         fs.writeFile(filePath, JSON.stringify({
-            layers: this.layers
+            layers
         }), (err) => {
             if (err) throw err;
             console.log('The file has been saved!');
