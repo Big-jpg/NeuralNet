@@ -163,12 +163,12 @@ class NeuralNetwork {
                 this.backwardPass(TRAINING_DATA.labels[s]);
                 this.updateWB();
             }
-            // console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
+            console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
 
-            if (epoch % 100 == 0) {
-                console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
-                // this.learningRate *= 0.95; // decay LR per 1000 Epochs
-            }
+            // if (epoch % 100 == 0) {
+            //     console.log(`| Epoch ${String(epoch).padStart(4, '0')} | Error: ${(this.totalError / NUM_SAMPLES).toFixed(3)} |`);
+            //     // this.learningRate *= 0.95; // decay LR per 1000 Epochs
+            // }
 
             this.totalError = 0.0;
         }

@@ -15,36 +15,34 @@ for (let i = 0; i < DATA.inputs.length; i++) {
     swap(DATA.inputs, DATA.labels, i, rand);
 }
 
-const train2 = {
+const newTrain = {
     inputs: DATA.inputs.slice(0, 60000),
     labels: DATA.labels.slice(0, 60000)
 }
 
-const test2 = {
+const newTest = {
     inputs: DATA.inputs.slice(60000),
     labels: DATA.labels.slice(60000)
 }
 
-train2.inputs = train2.inputs.map(inp => {
+newTrain.inputs = newTrain.inputs.map(inp => {
     return inp.map(x => x / 255.0);
 })
 
-test2.inputs = test2.inputs.map(inp => {
+newTest.inputs = newTest.inputs.map(inp => {
     return inp.map(x => x / 255.0);
 })
 
 const nn = new NeuralNetwork(
-    [train2.inputs[0].length, 18, 16, train2.labels[0].length],
+    [newTrain.inputs[0].length, 18, 16, newTrain.labels[0].length],
     0.01,
     20);
 
-nn.trainSGD(train2);
+// nn.trainSGD(newTrain);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// await nn.loadWB(path.join(__dirname, 'WebModel02.json'));
-nn.dumpWB(path.join(__dirname, 'WebModel04.json'));
+await nn.loadWB(path.join(__dirname, 'dump/WebModelNew.json'));
+// nn.dumpWB(path.join(__dirname, 'dump/WebModelNew.json'));
 
-nn.evaluate(test2);
-// const drawPred = nn.predict(draw);
-// console.log("This is number:", drawPred.indexOf(Math.max(...drawPred)));
+nn.evaluate(newTest);

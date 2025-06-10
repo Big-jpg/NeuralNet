@@ -75,9 +75,6 @@ const mnistDataLoader = new MnistDataloader(
     testLabelsFilePath
 );
 
-// const { train, test } = mnistDataLoader.loadData();
-// module.exports = { train, test };
-
 module.exports = { train, test } = mnistDataLoader.loadData();
 
 // console.log(train)
@@ -92,35 +89,3 @@ module.exports = { train, test } = mnistDataLoader.loadData();
 //     if (err) throw new Error(err);
 //     else console.log("image saved");
 // })
-
-
-// // To show images (Node.js doesn't support direct image rendering, so you would need a web server for that)
-// // Here’s a function that you can use to visualize the data on an HTML page
-// function showImages(images, labels) {
-//     const canvas = document.createElement('canvas');
-//     const ctx = canvas.getContext('2d');
-//     canvas.width = 280;
-//     canvas.height = 280;
-
-//     // Render images
-//     images.forEach((imageData, index) => {
-//         let imgData = ctx.createImageData(28, 28);
-//         let data = imgData.data;
-
-//         // Map image data to RGBA for rendering
-//         imageData.forEach((pixel, i) => {
-//             const baseIdx = i * 4;
-//             data[baseIdx] = pixel;  // R
-//             data[baseIdx + 1] = pixel;  // G
-//             data[baseIdx + 2] = pixel;  // B
-//             data[baseIdx + 3] = 255;  // A
-//         });
-
-//         ctx.putImageData(imgData, (index % 5) * 60, Math.floor(index / 5) * 60);
-//     });
-//     // document.body.appendChild(canvas);
-//     console.log(canvas);
-// }
-
-// // Example usage: Show first 10 training images
-// // showImages(train.images.slice(0, 10), train.labels.slice(0, 10));
