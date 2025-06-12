@@ -3,111 +3,169 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Draw-a-Num</title>
+    <title>Handwritten Digit</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
         body {
             margin: 0;
-            padding: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            padding: 2rem;
             font-family: Arial, sans-serif;
-            background: #f4f4f4;
+            background: #f9f9f9;
+            color: #333;
         }
 
-        #drawCanvas {
-            border: 2px solid #333;
-            background-color: white;
-            cursor: crosshair;
-        }
-
-        #controls {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            padding: 8px 14px;
-            font-size: 14px;
-            cursor: pointer;
-            border: none;
-            background-color: #007bff;
-            color: white;
-            border-radius: 4px;
-        }
-
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        #results {
-            font-size: 20px;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        #results div {
-            margin: 10px 0;
+        h1 {
+            margin: 1rem auto;
+            font-size: 1.75rem;
+            border-bottom: 2px dashed #333;
+            max-width: fit-content;
         }
 
         .container {
             display: flex;
-            gap: 40px;
+            gap: 1rem;
+            justify-content: center;
             align-items: center;
         }
 
+        .box {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+            max-width: 100%;
+            height: auto;
+        }
+
+        #drawCanvas {
+            cursor: crosshair;
+        }
+
+        #controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        button {
+            padding: 0.5rem 1.2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #0c72df;
+            transform: translateY(-1px);
+        }
+
+        #results {
+            font-size: 1.1rem;
+            padding: 1rem;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            min-width: 150px;
+        }
+
         h3 {
-            margin-bottom: 10px;
+            margin-bottom: 1rem;
+        }
+
+        #neuralNetCanvasYesInput {
+            display: block;
+        }
+
+        #neuralNetCanvasNoInput {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                align-items: stretch;
+            }
+
+            .box {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 
 <body>
+    <h1>Neural Network to Predict Handwritten Digits</h1>
     <div class="container">
-        <div>
-            <h3>Draw below (100x100, scaled from 280x280)</h3>
-            <canvas id="drawCanvas" width="100" height="100"></canvas>
+        <div class="box">
+            <h3>Draw a Number</h3>
+            <canvas id="drawCanvas" width="140" height="140"></canvas>
             <div id="controls">
                 <button onclick="clearCanvas()">Clear</button>
-                <button onclick="processImage()">Process Image</button>
+                <button onclick="processImage()">Predict</button>
             </div>
         </div>
-
-        <div id="results">
-            <div><strong>Prediction:</strong> <span id="pred">-</span></div>
-            <div><strong>Confidence:</strong> <span id="conf">--.--%</span></div>
+        <div class="box">
+            <canvas id="neuralNetCanvasYesInput" width="600" height="400"></canvas>
+            <canvas id="neuralNetCanvasNoInput" width="600" height="400"></canvas>
+            <div id="controls">
+                <button onclick="toggleCanvas()"><span id="canvasToggleText">Hide</span> Input layer</button>
+            </div>
+        </div>
+        <div class="box">
+            <div id="results">
+                <div>Prediction: <strong><span id="pred">0</span></strong></div>
+                <div>Confidence: <strong><span id="conf">00.00%</span></strong></div>
+            </div>
         </div>
     </div>
 
     <script src="./webModel.js"></script>
     <script>
-        const nn = new NeuralNetwork([784, 18, 16, 10], 0.01, 10);
-        getWeightsAndBiases(nn);
+        let nn;
+        const neuralNetCanvasYesInput = document.getElementById('neuralNetCanvasYesInput');
+        const neuralNetCanvasNoInput = document.getElementById('neuralNetCanvasNoInput');
+        let currentSelectedCanvas = neuralNetCanvasYesInput;
+        // caching currentSelectedCanvas for animation support - 4 later
 
-        async function getWeightsAndBiases(nn) {
+        (async () => {
+            await initNeuralNetwork();
+        })();
+
+        async function initNeuralNetwork() {
             try {
-                const response = await fetch('./WebModel04.json');
+                const response = await fetch('./dump/WebModelNew.json');
+                // const response = await fetch('../iris/model.json');
                 const obj = await response.json();
-                nn.layers = [];
-                obj.layers.forEach(layer => {
-                    const newLayer = new Layer(layer.numNeurons, layer.numInputs, layer.activation);
-                    newLayer.weights = layer.weights;
-                    newLayer.biases = layer.biases;
-                    nn.layers.push(newLayer);
-                });
+                nn = new NeuralNetwork(obj.layers);
+                //defaluts =>
+                // drawNN(canvasSelector, ignoreInput = false, cwidth = 600, cheight = 400, weightLineWidth = 0.5, nodeRadius = 6)
+                nn.drawNN("#neuralNetCanvasYesInput", false, '', '', weightLineWidth = 0.75);
+                nn.drawNN("#neuralNetCanvasNoInput", true, '', '', weightLineWidth = 0.75);
             } catch (error) {
                 console.log(error)
             }
         }
 
+        // CANVAS_DRAWING_LOGIG
         const drawCanvas = document.getElementById('drawCanvas');
         const ctx = drawCanvas.getContext('2d');
         let drawing = false;
@@ -129,11 +187,11 @@
 
         function draw(e) {
             if (!drawing) return;
-            e.preventDefault(); // Prevent scrolling on touch devices
+            e.preventDefault();
             const { x, y } = getPos(e);
             ctx.fillStyle = 'black';
             ctx.beginPath();
-            ctx.arc(x, y, 6, 0, Math.PI * 2); // Stroke radius
+            ctx.arc(x, y, 6, 0, Math.PI * 2);
             ctx.fill();
         }
 
@@ -154,7 +212,6 @@
             ctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
         }
 
-        // Initialize canvas with white background
         clearCanvas();
 
         function processImage() {
@@ -185,16 +242,33 @@
             document.getElementById('pred').textContent = predictedDigit;
             document.getElementById('conf').textContent = confidence + "%";
 
-            if (confidence >= 80.0) {
-                document.getElementById('conf').style.color = 'hsl(120deg, 53%, 49%)';
+            if (confidence >= 75.0) {
+                document.getElementById('conf').style.color = 'hsl(120deg, 50%, 50%)';
             } else if (confidence >= 50) {
-                document.getElementById('conf').style.color = 'hsl(60deg, 53%, 49%)';
+                document.getElementById('conf').style.color = 'hsl(60deg, 50%, 50%)';
             } else {
-                document.getElementById('conf').style.color = 'hsl(0deg, 53%, 49%)';
+                document.getElementById('conf').style.color = 'hsl(0deg, 50%, 50%)';
             }
 
             // console.log('Brightness Array (28x28):', brightnessArray);
             // console.log(`Prediction: ${predictedDigit}, Confidence: ${confidence}`);
+        }
+
+        function toggleCanvas() {
+            const canvasToggleText = document.getElementById('canvasToggleText');
+
+            if (canvasToggleText.innerText == "Hide") {
+                canvasToggleText.innerHTML = "Show";
+                neuralNetCanvasYesInput.style.display = 'none';
+                neuralNetCanvasNoInput.style.display = 'block';
+                currentSelectedCanvas = neuralNetCanvasNoInput;
+            } else {
+                canvasToggleText.innerText = "Hide";
+                neuralNetCanvasYesInput.style.display = 'block';
+                neuralNetCanvasNoInput.style.display = 'none';
+                currentSelectedCanvas = neuralNetCanvasYesInput;
+            }
+            // console.log(currentSelectedCanvas);
         }
     </script>
 </body>
