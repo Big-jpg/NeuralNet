@@ -78,7 +78,7 @@ If you're looking to build something similar, here are some resources I found su
    * ⚠️ Make sure you have **Node.js** installed.
 
 3. **Run the Iris Trained Model**
-   * Navigate to the `iris/` folder (or wherever your training script is).
+   * Navigate to the `iris/` folder.  
    * Run:
      ```bash
      node model.js
