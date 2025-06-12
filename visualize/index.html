@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Classifier Hub</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f4f4;
+            color: #333;
+        }
+
+        h1 {
+            margin: 1rem auto 3rem;
+            font-size: 2rem;
+            max-width: fit-content;
+            color: #222;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            flex-wrap: wrap;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 340px;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin: 1rem 0 0.5rem;
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            text-align: justify;
+            padding: 0 1rem 1.5rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Try out a Machine Learning Model</h1>
+
+    <div class="container">
+        <a class="card" href="handwritten.html">
+            <img src="./images/mnist.png" alt="Handwritten Digit Recognition">
+            <h2>Handwritten Digit Recognition</h2>
+            <p>Draw a number and see a deep neural network guess it using MNIST-trained model.</p>
+        </a>
+
+        <a class="card" href="iris.html">
+            <img src="./images/iris.png" alt="Iris Dataset Classification">
+            <h2>Iris Flower Classification</h2>
+            <p>Input flower measurements to predict its species using a trained classifier.</p>
+        </a>
+    </div>
+
+</body>
+
+</html>
