@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Iris Flower Classifier</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            color: #333;
+        }
+
+        h1 {
+            margin: 1rem auto;
+            font-size: 1.75rem;
+            border-bottom: 2px dashed #333;
+            max-width: fit-content;
+        }
+
+        h3 {
+            margin: 1rem auto 0.75rem;
+        }
+
+        .container {
+            margin: 2rem;
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            align-items: flex-start;
+            /* align-items: center; */
+        }
+
+
+        .box {
+            background: #fff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            min-width: 300px;
+            max-width: 625px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        #irisForm {
+            width: 100%;
+        }
+
+        form label {
+            margin-top: 0.50rem;
+            display: block;
+        }
+
+        input[type="number"] {
+            width: calc(100% - 0.25rem);
+            padding: 0.5rem;
+            margin: 0.25rem 0.125rem 0;
+            border: 1px solid #ccc;
+            outline: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        input[type="number"]:focus {
+            border: 1px solid #00b7ff;
+        }
+
+        button {
+            margin: 0.75rem auto 0;
+            display: block;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            transition: background-color 0.2s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background-color: #0c72df;
+            transform: translateY(-1px);
+        }
+
+        canvas {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: #fff;
+            width: 100%;
+            height: auto;
+        }
+
+        #neuralNetCanvasYesInput {
+            display: block;
+        }
+
+        #neuralNetCanvasNoInput {
+            display: none;
+        }
+
+        .canvas-controls {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        #result,
+        #confidence {
+            font-size: 1.25rem;
+            padding: 1rem;
+            background: #e6f7ff;
+            border-left: 4px solid #007bff;
+            width: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        @media (max-width: 992px) {
+            /* .container {
+                flex-direction: column;
+                align-items: stretch;
+            } */
+
+            .box {
+                max-width: 100%;
+                /* width: 100%;  */
+            }
+
+            canvas {
+                max-width: 100%;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1>Iris Flower Prediction</h1>
+    <div class="container">
+        <div class="box">
+            <h3>Enter details for a flower</h3>
+            <form id="irisForm">
+                <div id="controls">
+                    <label for="sepalLength">Sepal Length (cm):</label>
+                    <input type="number" id="sepalLength" step="0.1" required>
+
+                    <label for="sepalWidth">Sepal Width (cm):</label>
+                    <input type="number" id="sepalWidth" step="0.1" required>
+
+                    <label for="petalLength">Petal Length (cm):</label>
+                    <input type="number" id="petalLength" step="0.1" required>
+
+                    <label for="petalWidth">Petal Width (cm):</label>
+                    <input type="number" id="petalWidth" step="0.1" required>
+
+                    <button type="submit">Predict</button>
+                </div>
+            </form>
+        </div>
+        <div class="box">
+            <canvas id="neuralNetCanvasYesInput" width="600" height="400"></canvas>
+            <canvas id="neuralNetCanvasNoInput" width="600" height="400"></canvas>
+            <div id="controls">
+                <button class="canvas-controls" onclick="toggleCanvas()">
+                    <span id="canvasToggleText">Hide</span> Input layer
+                </button>
+            </div>
+        </div>
+        <div class="box">
+            <div id="result">Class:</div>
+            <div id="confidence">Confidence:</div>
+        </div>
+    </div>
+
+    <script src="webModel.js"></script>
+    <script>
+        let nn;
+        const neuralNetCanvasYesInput = document.getElementById('neuralNetCanvasYesInput');
+        const neuralNetCanvasNoInput = document.getElementById('neuralNetCanvasNoInput');
+        let currentSelectedCanvas = neuralNetCanvasYesInput;
+
+        (async () => {
+            await initNeuralNetwork();
+        })();
+
+        async function initNeuralNetwork() {
+            try {
+                const response = await fetch('../iris/model.json');
+                const obj = await response.json();
+                nn = new NeuralNetwork(obj.layers);
+                nn.drawNN("#neuralNetCanvasYesInput", false, '', '', weightLineWidth = 0.75);
+                nn.drawNN("#neuralNetCanvasNoInput", true, '', '', weightLineWidth = 0.75);
+            } catch (error) {
+                console.log(error)
+            }
+        }
+
+        document.getElementById("irisForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const sepalLength = parseFloat(document.getElementById("sepalLength").value);
+            const sepalWidth = parseFloat(document.getElementById("sepalWidth").value);
+            const petalLength = parseFloat(document.getElementById("petalLength").value);
+            const petalWidth = parseFloat(document.getElementById("petalWidth").value);
+            const result = document.getElementById("result");
+            const confidence = document.getElementById("confidence");
+
+            const prediction = nn.predict([sepalLength, sepalWidth, petalLength, petalWidth]);
+            const predictedClassIndex = prediction.indexOf(Math.max(...prediction));
+            const confidencePrec = (Math.max(...prediction) * 100).toFixed(2);
+
+            confidence.innerText = `Confidence: ${confidencePrec}`;
+
+            if (predictedClassIndex == 0) {
+                result.textContent = `Class: Iris-setosa`;
+            } else if (predictedClassIndex === 1) {
+                result.textContent = `Class: Iris-versicolor`;
+            } else {
+                result.textContent = `Class: Iris-virginica`;
+            }
+
+            if (confidencePrec >= 75.0) {
+                confidence.style.color = 'hsl(120deg, 50%, 50%)';
+            } else if (confidencePrec >= 50) {
+                confidence.style.color = 'hsl(60deg, 50%, 50%)';
+            } else {
+                confidence.style.color = 'hsl(0deg, 50%, 50%)';
+            }
+
+        });
+
+        function toggleCanvas() {
+            const canvasToggleText = document.getElementById('canvasToggleText');
+
+            if (canvasToggleText.innerText == "Hide") {
+                canvasToggleText.innerHTML = "Show";
+                neuralNetCanvasYesInput.style.display = 'none';
+                neuralNetCanvasNoInput.style.display = 'block';
+                currentSelectedCanvas = neuralNetCanvasNoInput;
+            } else {
+                canvasToggleText.innerText = "Hide";
+                neuralNetCanvasYesInput.style.display = 'block';
+                neuralNetCanvasNoInput.style.display = 'none';
+                currentSelectedCanvas = neuralNetCanvasYesInput;
+            }
+        }
+    </script>
+</body>
+
+</html>
