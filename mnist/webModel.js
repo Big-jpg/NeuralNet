@@ -103,12 +103,12 @@ class NeuralNetwork {
             // const numNeurons = Math.min(layerSizes[l], 20);
             // modify this to group 28 neurons together in first layer
             const numNeurons = layerSizes[l];
-            const layerX = (width / (layerCount - 1)) * l + 15; //15 to adjust 
+            const layerX = (width / (layerCount - 1)) * l + width / 40; // "x/2" added to adjust the initial x subtraction, where x is "width/20"
             const neuronSpacing = height / (numNeurons + 1);
 
             const positions = [];
             for (let n = 0; n < numNeurons; n++) {
-                const neuronY = neuronSpacing * (n + 1) + 10;
+                const neuronY = neuronSpacing * (n + 1) + height / 40; // same as width
                 positions.push({ x: layerX, y: neuronY });
             }
             neuronPositions.push(positions);
